@@ -1,0 +1,10 @@
+@"
+venv/
+__pycache__/
+*.pyc
+.ipynb_checkpoints/
+.env
+test_preprocessed.csv
+train_preprocessed.csv
+validation_preprocessed.csv
+"@ | Out-File -Encoding utf8 .gitignore
