@@ -712,6 +712,33 @@
             color: #818cf8;
         }
 
+        .model-btn-chip, .adv-model-btn-chip {
+            padding: 9px 16px;
+            font-size: 0.85rem;
+            font-weight: 600;
+            border-radius: var(--radius-sm);
+            background: var(--bg-input);
+            border: 1px solid var(--border-medium);
+            color: var(--text-secondary);
+            cursor: pointer;
+            transition: var(--transition-fast);
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .model-btn-chip:hover, .adv-model-btn-chip:hover {
+            border-color: var(--accent-indigo);
+            color: var(--text-primary);
+        }
+
+        .model-btn-chip.selected, .adv-model-btn-chip.selected {
+            background: var(--accent-indigo-light);
+            border-color: var(--accent-indigo);
+            color: #818cf8;
+            box-shadow: 0 0 12px rgba(99, 102, 241, 0.2);
+        }
+
         .adv-grid {
             display: grid;
             grid-template-columns: 1fr 1fr;
@@ -1370,6 +1397,24 @@
                     </div>
                 </div>
 
+                <div class="model-selector-group" style="margin-top: 16px; margin-bottom: 8px;">
+                    <label class="input-label" style="font-size: 0.85rem; display: block; margin-bottom: 8px;">Select Classification Model</label>
+                    <div class="model-chips" style="display: flex; gap: 8px; flex-wrap: wrap;">
+                        <button type="button" class="model-btn-chip selected" data-model="tfidf">
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
+                            TF-IDF + Logistic Regression
+                        </button>
+                        <button type="button" class="model-btn-chip" data-model="distilbert">
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="12 2 2 7 12 12 22 7 12 2"/><polyline points="2 17 12 22 22 17"/><polyline points="2 12 12 17 22 12"/></svg>
+                            DistilBERT Transformer
+                        </button>
+                        <button type="button" class="model-btn-chip" data-model="compare">
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="18" rx="1"/><rect x="14" y="3" width="7" height="18" rx="1"/></svg>
+                            Compare Models
+                        </button>
+                    </div>
+                </div>
+
                 <div class="controls-row">
                     <button id="detect-btn" class="btn btn-primary" style="flex: 2;">
                         <span id="detect-btn-label">Analyze Headline</span>
@@ -1407,9 +1452,30 @@
                     placeholder="Enter a headline to apply adversarial perturbations..."
                 ></textarea>
 
+                <div class="model-selector-group" style="margin-top: 16px; margin-bottom: 12px;">
+                    <label class="input-label" style="font-size: 0.85rem; display: block; margin-bottom: 8px;">Target Model for Robustness Test</label>
+                    <div class="model-chips" style="display: flex; gap: 8px; flex-wrap: wrap;">
+                        <button type="button" class="adv-model-btn-chip selected" data-model="tfidf">
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
+                            TF-IDF
+                        </button>
+                        <button type="button" class="adv-model-btn-chip" data-model="distilbert">
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="12 2 2 7 12 12 22 7 12 2"/><polyline points="2 17 12 22 22 17"/><polyline points="2 12 12 17 22 12"/></svg>
+                            DistilBERT
+                        </button>
+                        <button type="button" class="adv-model-btn-chip" data-model="compare">
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="18" rx="1"/><rect x="14" y="3" width="7" height="18" rx="1"/></svg>
+                            Compare Both Models
+                        </button>
+                    </div>
+                </div>
+
                 <div class="attack-selector-group">
                     <label class="input-label" style="font-size: 0.85rem;">Attack Transformation Method</label>
                     <div class="attack-chips">
+                        <button type="button" class="attack-btn-chip" data-attack="none">
+                            None (Original)
+                        </button>
                         <button type="button" class="attack-btn-chip selected" data-attack="substitution">
                             Character Substitution
                         </button>
@@ -1735,6 +1801,9 @@
                             document.getElementById('spec-val-samples').textContent = data.dataset.validation_samples.toLocaleString();
                             document.getElementById('spec-test-samples').textContent = data.dataset.test_samples.toLocaleString();
                         }
+                        if (data.model_info && document.getElementById('spec-model-type')) {
+                            document.getElementById('spec-model-type').textContent = data.model_info.model_type;
+                        }
                     }
                 } catch (e) {
                     console.log('Metrics endpoint notice:', e);
@@ -1770,6 +1839,17 @@
             const resultContainer = document.getElementById('detection-result-container');
             const exampleChips = document.querySelectorAll('.example-chip');
 
+            const modelChips = document.querySelectorAll('.model-btn-chip');
+            let selectedModel = 'tfidf';
+
+            modelChips.forEach(chip => {
+                chip.addEventListener('click', () => {
+                    modelChips.forEach(c => c.classList.remove('selected'));
+                    chip.classList.add('selected');
+                    selectedModel = chip.getAttribute('data-model');
+                });
+            });
+
             headlineInput.addEventListener('input', () => {
                 charCounter.textContent = `${headlineInput.value.length} / 300`;
             });
@@ -1794,7 +1874,7 @@
                 resultContainer.innerHTML = `
                     <div class="state-loading">
                         <div class="pulse-ring"></div>
-                        <div>Evaluating headline features with baseline classifier...</div>
+                        <div>Evaluating headline with ${selectedModel === 'compare' ? 'both models' : selectedModel.toUpperCase()} classifier...</div>
                     </div>
                 `;
 
@@ -1802,38 +1882,89 @@
                     const res = await fetch('/predict', {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ headline })
+                        body: JSON.stringify({ headline, model: selectedModel })
                     });
                     if (!res.ok) throw new Error('API server returned error');
                     const data = await res.json();
 
-                    const isClickbait = data.prediction === 'CLICKBAIT';
-                    const confPct = Number(data.confidence) * 100;
-                    const badgeClass = isClickbait ? 'pill-clickbait' : 'pill-nonclickbait';
+                    if (data.model === 'compare' && data.tfidf && data.distilbert) {
+                        const tfidfIsClick = data.tfidf.prediction === 'CLICKBAIT';
+                        const tfidfConf = Number(data.tfidf.confidence) * 100;
+                        const bertIsClick = data.distilbert.prediction === 'CLICKBAIT';
+                        const bertConf = Number(data.distilbert.confidence) * 100;
 
-                    resultContainer.innerHTML = `
-                        <div class="result-card-premium">
-                            <div class="result-main">
-                                <span class="result-header-label">Analysis Result</span>
-                                <div class="prediction-pill ${badgeClass}">
-                                    ${isClickbait ? 'CLICKBAIT' : 'NON-CLICKBAIT'}
+                        resultContainer.innerHTML = `
+                            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 16px;">
+                                <div class="result-card-premium">
+                                    <div class="result-main">
+                                        <span class="result-header-label">Model 1: TF-IDF + Logistic Regression</span>
+                                        <div class="prediction-pill ${tfidfIsClick ? 'pill-clickbait' : 'pill-nonclickbait'}">
+                                            ${tfidfIsClick ? 'CLICKBAIT' : 'NON-CLICKBAIT'}
+                                        </div>
+                                        <div class="model-tag">
+                                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
+                                            N-Gram TF-IDF Classifier
+                                        </div>
+                                        <div style="margin-top: 8px;">
+                                            <button class="btn btn-outline" style="font-size: 0.85rem; padding: 8px 16px;" onclick="shortcutExplain('${headline.replace(/'/g, "\\'")}')">
+                                                Explain with LIME
+                                            </button>
+                                        </div>
+                                    </div>
+                                    <div class="result-visual">
+                                        ${renderRing(tfidfConf, tfidfIsClick)}
+                                        <span class="confidence-label">TF-IDF Confidence</span>
+                                    </div>
                                 </div>
-                                <div class="model-tag">
-                                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
-                                    Model: TF-IDF + Logistic Regression
-                                </div>
-                                <div style="margin-top: 8px;">
-                                    <button class="btn btn-outline" style="font-size: 0.85rem; padding: 8px 16px;" onclick="shortcutExplain('${headline.replace(/'/g, "\\'")}')">
-                                        Explain Prediction with LIME
-                                    </button>
+
+                                <div class="result-card-premium">
+                                    <div class="result-main">
+                                        <span class="result-header-label">Model 2: DistilBERT Transformer</span>
+                                        <div class="prediction-pill ${bertIsClick ? 'pill-clickbait' : 'pill-nonclickbait'}">
+                                            ${bertIsClick ? 'CLICKBAIT' : 'NON-CLICKBAIT'}
+                                        </div>
+                                        <div class="model-tag">
+                                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="12 2 2 7 12 12 22 7 12 2"/><polyline points="2 17 12 22 22 17"/><polyline points="2 12 12 17 22 12"/></svg>
+                                            Fine-tuned DistilBERT
+                                        </div>
+                                    </div>
+                                    <div class="result-visual">
+                                        ${renderRing(bertConf, bertIsClick)}
+                                        <span class="confidence-label">DistilBERT Confidence</span>
+                                    </div>
                                 </div>
                             </div>
-                            <div class="result-visual">
-                                ${renderRing(confPct, isClickbait)}
-                                <span class="confidence-label">Prediction Confidence</span>
+                        `;
+                    } else {
+                        const isClickbait = data.prediction === 'CLICKBAIT';
+                        const confPct = Number(data.confidence) * 100;
+                        const badgeClass = isClickbait ? 'pill-clickbait' : 'pill-nonclickbait';
+                        const modelDisplayName = data.model_name || (selectedModel === 'distilbert' ? 'DistilBERT Transformer' : 'TF-IDF + Logistic Regression');
+
+                        resultContainer.innerHTML = `
+                            <div class="result-card-premium">
+                                <div class="result-main">
+                                    <span class="result-header-label">Analysis Result</span>
+                                    <div class="prediction-pill ${badgeClass}">
+                                        ${isClickbait ? 'CLICKBAIT' : 'NON-CLICKBAIT'}
+                                    </div>
+                                    <div class="model-tag">
+                                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
+                                        Model: ${modelDisplayName}
+                                    </div>
+                                    <div style="margin-top: 8px;">
+                                        <button class="btn btn-outline" style="font-size: 0.85rem; padding: 8px 16px;" onclick="shortcutExplain('${headline.replace(/'/g, "\\'")}')">
+                                            Explain Prediction with LIME
+                                        </button>
+                                    </div>
+                                </div>
+                                <div class="result-visual">
+                                    ${renderRing(confPct, isClickbait)}
+                                    <span class="confidence-label">Prediction Confidence</span>
+                                </div>
                             </div>
-                        </div>
-                    `;
+                        `;
+                    }
                 } catch (err) {
                     resultContainer.innerHTML = `<div style="color: #f43f5e; padding: 16px; background: rgba(244,63,94,0.1); border-radius: 8px;">Unable to process request. Please check API server connection.</div>`;
                 } finally {
@@ -1869,8 +2000,19 @@
             const advClearBtn = document.getElementById('adv-clear-btn');
             const advResultContainer = document.getElementById('adv-result-container');
             const attackChips = document.querySelectorAll('.attack-btn-chip');
+            const advModelChips = document.querySelectorAll('.adv-model-btn-chip');
 
             let selectedAttack = 'substitution';
+            let selectedAdvModel = 'tfidf';
+
+            advModelChips.forEach(chip => {
+                chip.addEventListener('click', () => {
+                    advModelChips.forEach(c => c.classList.remove('selected'));
+                    chip.classList.add('selected');
+                    selectedAdvModel = chip.getAttribute('data-model');
+                });
+            });
+
             attackChips.forEach(chip => {
                 chip.addEventListener('click', () => {
                     attackChips.forEach(c => c.classList.remove('selected'));
@@ -1892,11 +2034,11 @@
 
                 advBtn.disabled = true;
                 advClearBtn.disabled = true;
-                advBtnLabel.innerHTML = `<span class="spinner"></span> Running Attack...`;
+                advBtnLabel.innerHTML = `<span class="spinner"></span> Running Robustness Test...`;
                 advResultContainer.innerHTML = `
                     <div class="state-loading">
                         <div class="pulse-ring"></div>
-                        <div>Applying ${selectedAttack} transformation and predicting output...</div>
+                        <div>Applying ${selectedAttack} transformation with ${selectedAdvModel.toUpperCase()} model...</div>
                     </div>
                 `;
 
@@ -1904,79 +2046,178 @@
                     const res = await fetch('/adversarial', {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ headline, attack_type: selectedAttack })
+                        body: JSON.stringify({
+                            headline,
+                            attack_type: selectedAttack,
+                            model: selectedAdvModel
+                        })
                     });
                     if (!res.ok) throw new Error('Adversarial API error');
                     const data = await res.json();
 
-                    const orig = data.original;
-                    const adv = data.adversarial;
-                    const origConfPct = orig.confidence * 100;
-                    const advConfPct = adv.confidence * 100;
-                    const confDiff = advConfPct - origConfPct;
-                    const changed = orig.prediction !== adv.prediction;
+                    const attackLabel = data.attack_type === 'none' ? 'None (Original Only)' :
+                                       data.attack_type === 'insertion' ? 'Character Insertion' :
+                                       data.attack_type === 'deletion' ? 'Character Deletion' : 'Character Substitution';
 
-                    const origIsClick = orig.prediction === 'CLICKBAIT';
-                    const advIsClick = adv.prediction === 'CLICKBAIT';
+                    if (data.model === 'compare' && data.compare) {
+                        const tfidfOrig = data.compare.tfidf.original;
+                        const tfidfAdv = data.compare.tfidf.adversarial;
+                        const tfidfOrigConf = tfidfOrig.confidence * 100;
+                        const tfidfAdvConf = tfidfAdv.confidence * 100;
+                        const tfidfChanged = tfidfOrig.prediction !== tfidfAdv.prediction;
 
-                    advResultContainer.innerHTML = `
-                        <div class="adv-grid">
-                            <div class="adv-card">
-                                <div class="adv-card-header">
-                                    <span>Original Headline</span>
-                                    <span style="color: #818cf8;">Baseline</span>
-                                </div>
-                                <div class="headline-box">${orig.headline}</div>
-                                <div style="display: flex; justify-content: space-between; align-items: center;">
-                                    <span class="${origIsClick ? 'pill-clickbait' : 'pill-nonclickbait'}" style="font-size: 0.95rem; padding: 6px 14px;">
-                                        ${orig.prediction}
-                                    </span>
-                                    <span style="font-family: var(--font-mono); font-weight: 700; font-size: 1.1rem;">
-                                        ${origConfPct.toFixed(2)}%
-                                    </span>
+                        const bertOrig = data.compare.distilbert.original;
+                        const bertAdv = data.compare.distilbert.adversarial;
+                        const bertOrigConf = bertOrig.confidence * 100;
+                        const bertAdvConf = bertAdv.confidence * 100;
+                        const bertChanged = bertOrig.prediction !== bertAdv.prediction;
+
+                        advResultContainer.innerHTML = `
+                            <div style="margin-bottom: 16px; font-size: 0.9rem; color: var(--text-secondary); background: var(--bg-card); padding: 12px 18px; border-radius: var(--radius-sm); border: 1px solid var(--border-light);">
+                                <strong>Adversarial Attack:</strong> <span style="color: #f59e0b; font-weight: 600;">${attackLabel}</span>
+                                <div style="margin-top: 6px; font-family: var(--font-mono); font-size: 0.85rem; color: var(--text-primary);">
+                                    Perturbed Text: <span style="color: #f59e0b;">${data.adversarial.headline}</span>
                                 </div>
                             </div>
 
-                            <div class="adv-card">
-                                <div class="adv-card-header">
-                                    <span>Adversarial Headline</span>
-                                    <span style="color: #f59e0b;">Attack: ${data.attack_type}</span>
+                            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 16px;">
+                                <!-- TF-IDF Comparison Card -->
+                                <div class="adv-card">
+                                    <div class="adv-card-header">
+                                        <span>TF-IDF + Logistic Regression</span>
+                                        <span style="color: #818cf8;">Baseline</span>
+                                    </div>
+                                    <div style="display: flex; justify-content: space-between; padding: 10px; background: var(--bg-body); border-radius: 6px;">
+                                        <div>
+                                            <div style="font-size: 0.75rem; color: var(--text-muted);">ORIGINAL</div>
+                                            <span class="${tfidfOrig.prediction === 'CLICKBAIT' ? 'pill-clickbait' : 'pill-nonclickbait'}" style="font-size: 0.8rem; padding: 4px 10px;">${tfidfOrig.prediction}</span>
+                                        </div>
+                                        <div style="font-family: var(--font-mono); font-weight: 700; font-size: 1rem; align-self: center;">
+                                            ${tfidfOrigConf.toFixed(2)}%
+                                        </div>
+                                    </div>
+                                    <div style="display: flex; justify-content: space-between; padding: 10px; background: var(--bg-body); border-radius: 6px;">
+                                        <div>
+                                            <div style="font-size: 0.75rem; color: var(--text-muted);">ATTACKED</div>
+                                            <span class="${tfidfAdv.prediction === 'CLICKBAIT' ? 'pill-clickbait' : 'pill-nonclickbait'}" style="font-size: 0.8rem; padding: 4px 10px;">${tfidfAdv.prediction}</span>
+                                        </div>
+                                        <div style="font-family: var(--font-mono); font-weight: 700; font-size: 1rem; align-self: center;">
+                                            ${tfidfAdvConf.toFixed(2)}%
+                                        </div>
+                                    </div>
+                                    <div style="font-size: 0.8rem; display: flex; justify-content: space-between; padding-top: 6px; border-top: 1px solid var(--border-light);">
+                                        <span>Flipped Verdict:</span>
+                                        <strong style="color: ${tfidfChanged ? '#f43f5e' : '#34d399'};">${tfidfChanged ? 'YES (Vulnerable)' : 'NO (Robust)'}</strong>
+                                    </div>
                                 </div>
-                                <div class="headline-box" style="font-family: var(--font-mono); border-color: rgba(245, 158, 11, 0.3);">
-                                    ${adv.headline}
-                                </div>
-                                <div style="display: flex; justify-content: space-between; align-items: center;">
-                                    <span class="${advIsClick ? 'pill-clickbait' : 'pill-nonclickbait'}" style="font-size: 0.95rem; padding: 6px 14px;">
-                                        ${adv.prediction}
-                                    </span>
-                                    <span style="font-family: var(--font-mono); font-weight: 700; font-size: 1.1rem;">
-                                        ${advConfPct.toFixed(2)}%
-                                    </span>
-                                </div>
-                            </div>
-                        </div>
 
-                        <div class="adv-summary-banner">
-                            <div class="banner-info">
-                                <span class="banner-title">Robustness Summary</span>
-                                <span class="banner-sub">Evaluates target prediction stability post-character noise</span>
-                            </div>
-                            <div class="banner-stats">
-                                <div class="stat-group">
-                                    <span class="stat-label">Prediction Changed</span>
-                                    <span class="stat-value" style="color: ${changed ? '#f43f5e' : '#34d399'};">
-                                        ${changed ? 'YES' : 'NO'}
-                                    </span>
+                                <!-- DistilBERT Comparison Card -->
+                                <div class="adv-card">
+                                    <div class="adv-card-header">
+                                        <span>DistilBERT Transformer</span>
+                                        <span style="color: #34d399;">Transformer</span>
+                                    </div>
+                                    <div style="display: flex; justify-content: space-between; padding: 10px; background: var(--bg-body); border-radius: 6px;">
+                                        <div>
+                                            <div style="font-size: 0.75rem; color: var(--text-muted);">ORIGINAL</div>
+                                            <span class="${bertOrig.prediction === 'CLICKBAIT' ? 'pill-clickbait' : 'pill-nonclickbait'}" style="font-size: 0.8rem; padding: 4px 10px;">${bertOrig.prediction}</span>
+                                        </div>
+                                        <div style="font-family: var(--font-mono); font-weight: 700; font-size: 1rem; align-self: center;">
+                                            ${bertOrigConf.toFixed(2)}%
+                                        </div>
+                                    </div>
+                                    <div style="display: flex; justify-content: space-between; padding: 10px; background: var(--bg-body); border-radius: 6px;">
+                                        <div>
+                                            <div style="font-size: 0.75rem; color: var(--text-muted);">ATTACKED</div>
+                                            <span class="${bertAdv.prediction === 'CLICKBAIT' ? 'pill-clickbait' : 'pill-nonclickbait'}" style="font-size: 0.8rem; padding: 4px 10px;">${bertAdv.prediction}</span>
+                                        </div>
+                                        <div style="font-family: var(--font-mono); font-weight: 700; font-size: 1rem; align-self: center;">
+                                            ${bertAdvConf.toFixed(2)}%
+                                        </div>
+                                    </div>
+                                    <div style="font-size: 0.8rem; display: flex; justify-content: space-between; padding-top: 6px; border-top: 1px solid var(--border-light);">
+                                        <span>Flipped Verdict:</span>
+                                        <strong style="color: ${bertChanged ? '#f43f5e' : '#34d399'};">${bertChanged ? 'YES (Vulnerable)' : 'NO (Robust)'}</strong>
+                                    </div>
                                 </div>
-                                <div class="stat-group">
-                                    <span class="stat-label">Confidence Change</span>
-                                    <span class="stat-value" style="color: ${confDiff < 0 ? '#f43f5e' : '#34d399'};">
-                                        ${confDiff > 0 ? '+' : ''}${confDiff.toFixed(2)}%
-                                    </span>
+                            </div>
+                        `;
+                    } else {
+                        const orig = data.original;
+                        const adv = data.adversarial;
+                        const origConfPct = orig.confidence * 100;
+                        const advConfPct = adv.confidence * 100;
+                        const confDiff = advConfPct - origConfPct;
+                        const changed = orig.prediction !== adv.prediction;
+
+                        const origIsClick = orig.prediction === 'CLICKBAIT';
+                        const advIsClick = adv.prediction === 'CLICKBAIT';
+                        const activeModelName = (data.model === 'distilbert') ? 'DistilBERT Transformer' : 'TF-IDF + Logistic Regression';
+
+                        advResultContainer.innerHTML = `
+                            <div style="margin-bottom: 12px;">
+                                <span class="model-tag" style="display: inline-flex; font-size: 0.85rem; padding: 4px 12px;">
+                                    Active Model: ${activeModelName}
+                                </span>
+                            </div>
+                            <div class="adv-grid">
+                                <div class="adv-card">
+                                    <div class="adv-card-header">
+                                        <span>Original Headline</span>
+                                        <span style="color: #818cf8;">Baseline</span>
+                                    </div>
+                                    <div class="headline-box">${orig.headline}</div>
+                                    <div style="display: flex; justify-content: space-between; align-items: center;">
+                                        <span class="${origIsClick ? 'pill-clickbait' : 'pill-nonclickbait'}" style="font-size: 0.95rem; padding: 6px 14px;">
+                                            ${orig.prediction}
+                                        </span>
+                                        <span style="font-family: var(--font-mono); font-weight: 700; font-size: 1.1rem;">
+                                            ${origConfPct.toFixed(2)}%
+                                        </span>
+                                    </div>
+                                </div>
+
+                                <div class="adv-card">
+                                    <div class="adv-card-header">
+                                        <span>Adversarial Headline</span>
+                                        <span style="color: #f59e0b;">Attack: ${attackLabel}</span>
+                                    </div>
+                                    <div class="headline-box" style="font-family: var(--font-mono); border-color: rgba(245, 158, 11, 0.3);">
+                                        ${adv.headline}
+                                    </div>
+                                    <div style="display: flex; justify-content: space-between; align-items: center;">
+                                        <span class="${advIsClick ? 'pill-clickbait' : 'pill-nonclickbait'}" style="font-size: 0.95rem; padding: 6px 14px;">
+                                            ${adv.prediction}
+                                        </span>
+                                        <span style="font-family: var(--font-mono); font-weight: 700; font-size: 1.1rem;">
+                                            ${advConfPct.toFixed(2)}%
+                                        </span>
+                                    </div>
                                 </div>
                             </div>
-                        </div>
-                    `;
+
+                            <div class="adv-summary-banner">
+                                <div class="banner-info">
+                                    <span class="banner-title">Robustness Summary</span>
+                                    <span class="banner-sub">Model: ${activeModelName} | Perturbation: ${attackLabel}</span>
+                                </div>
+                                <div class="banner-stats">
+                                    <div class="stat-group">
+                                        <span class="stat-label">Prediction Changed</span>
+                                        <span class="stat-value" style="color: ${changed ? '#f43f5e' : '#34d399'};">
+                                            ${changed ? 'YES' : 'NO'}
+                                        </span>
+                                    </div>
+                                    <div class="stat-group">
+                                        <span class="stat-label">Confidence Change</span>
+                                        <span class="stat-value" style="color: ${confDiff < 0 ? '#f43f5e' : '#34d399'};">
+                                            ${confDiff > 0 ? '+' : ''}${confDiff.toFixed(2)}%
+                                        </span>
+                                    </div>
+                                </div>
+                            </div>
+                        `;
+                    }
                 } catch (err) {
                     advResultContainer.innerHTML = `<div style="color: #f43f5e; padding: 16px; background: rgba(244,63,94,0.1); border-radius: 8px;">Unable to complete adversarial evaluation.</div>`;
                 } finally {
